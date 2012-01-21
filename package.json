@@ -1,0 +1,6 @@
+{ "name"         : "ironmq"
+, "description"  : "ironMQ bindings for node"
+, "version"      : "0.1.0"
+, "author"       : "seebees@gmail.com"
+, "main"         : "./libs/index.js"
+}
