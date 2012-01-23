@@ -103,15 +103,18 @@ function IronMQ (token, op) {
     queues.list = function (op, cb) {
 
     }
+    queues.queues = queues
 
-    return {queues: queues}
+    return queues
   }
 
   projects.list = function(cb) {
 
   }
 
-  return {projects: projects}
+  projects.projects = projects
+
+  return projects
 
 
   //Transport implementation
