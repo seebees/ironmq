@@ -1,6 +1,7 @@
 
-var url = require('url')
+var url     = require('url')
 var request = require('request')
+var qs      = require('querystring')
 
 function IronMQ (token, op) {
 
@@ -68,7 +69,7 @@ function IronMQ (token, op) {
           //error
         }
         ironmqGet(path + msg_path
-                  , {}
+                  , params
                   , function (err, obj) {
                       if (!err) {
                         obj = obj.messages.map(function(msg) {
@@ -120,7 +121,11 @@ function IronMQ (token, op) {
   //Transport implementation
 
   function ironmqGet(path, params, cb) {
-    request({ url     : baseUrl + path + '' // params => qs
+
+    var search = qs.stringify(params)
+    search = search ? '?' + search : ''
+
+    request.get({ url     : baseUrl + path + search
             , headers : headers}
           , parseResponse(cb))
       .end()
