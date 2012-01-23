@@ -21,15 +21,11 @@ if (con.proxy) {
         , msg: 'Messages put on queue.' })
 }
 
+test('queue.put(str, func)', function(t) {
 
-test('queue.put(str, {}, func)', function(t) {
+  var queue = ironmq(token)(project)(q_name)
 
-  var client = ironmq(token)
-  var queue  = client
-                .projects(project)
-                .queues(q_name)
-
-  queue.put('this is a test', {}, function(err, obj) {
+  queue.put('this is a test', function(err, obj) {
     t.deepEqual(obj,
                     { ids: ['4f176348ef05202f74005bc6']
                     , msg: 'Messages put on queue.'})
@@ -37,9 +33,4 @@ test('queue.put(str, {}, func)', function(t) {
   })
 
 })
-
-
-//TODO
-// [msgs], cb
-// msg, not object, cb -> throw error
 

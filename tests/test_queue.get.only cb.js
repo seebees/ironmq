@@ -15,7 +15,7 @@ if (con.proxy) {
     .matchHeader('user-agent','IronMQ Node Client')
     .get(
       '/1/projects/' + project + '/queues/' + q_name
-        + '/messages/4f1752cd52549a7435005a6b')
+        + '/messages')
     .reply(200
       , { body: 'this is a test'
         , id: '4f1752cd52549a7435005a6b'
@@ -31,8 +31,7 @@ test('queue.get', function(t) {
                 .projects(project)
                 .queues(q_name)
 
-  queue.get('4f1752cd52549a7435005a6b'
-          , function(err, obj) {
+  queue.get(function(err, obj) {
               t.deepEqual(obj
                           , [{id: '4f1752cd52549a7435005a6b'
                             , timeout: 60
@@ -43,12 +42,3 @@ test('queue.get', function(t) {
   })
 })
 
-//TODO
-// 1, cb
-// '1', cb (will not work, real message id's parseInt into a number :(
-// msg_id not exist, cb  //{ msg: 'Method not allowed', status_code: 405 }
-// # more then in queue, cb
-// 5 when 0 in queue, cb
-// [], cb
-// {}, cb
-// cb not a function
