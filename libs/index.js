@@ -3,6 +3,25 @@ var url     = require('url')
 var request = require('request')
 var qs      = require('querystring')
 
+// Expose
+module.exports = IronMQ
+
+/**
+ * Main entry point.  The whole implementation is
+ * just currying token, project_id, queue_name inorder to
+ * get, put, del messages
+ *
+ * token is the secret you will get from Iron.io
+ *
+ * op is an option object supporting
+ * protocol
+ * host
+ * port
+ * api_version
+ *
+ * These values are mostly for testing.  I have no idea
+ * why you would want to change them in the real world.
+ */
 function IronMQ (token, op) {
 
   op = op || {}
@@ -12,30 +31,46 @@ function IronMQ (token, op) {
       , 'Content-Type'  : 'application/json'
       , 'User-Agent'    : 'IronMQ Node Client'}
 
+  var api_ver = op.ver || '1'
+
   var baseUrl = url.format({
         protocol  : op.protocol || 'https'
       , hostname  : op.host     || 'mq-aws-us-east-1.iron.io'
       , port      : op.port     || 443
-      , pathname  : '/' + (op.ver || '1')})
+      , pathname  : '/' + api_ver})
 
+  /**
+   *  Curry the project_id
+  */
   function projects(project_id) {
 
+    /**
+     *  Curry the queue_name
+     *  cb is a function.  Passing it is short hand for
+     *  queues(q_name).info(cb)
+     */
     function queues(queue_name, cb) {
+
+      // path to use for http message operations
       var path = '/projects/' + project_id
                + '/queues/'     + queue_name
                + '/messages'
+
+      // object to return
       var queue = {
             put   : messagePut
           , get   : messageGet
           , del   : messageDel
-          , info  : queueInfo}
+          , info  : queueInfo
+          , name  : function(){return queue_name}}
 
       if (typeof cb === 'function') {
         queue.info(cb)
-      } else {
-        return queue
       }
 
+      return queue
+
+      //Implementation
 
       function messagePut(payload, op, cb) {
 
@@ -69,16 +104,16 @@ function IronMQ (token, op) {
           //error
         }
         ironmqGet(path + msg_path
-                  , params
-                  , function (err, obj) {
-                      if (!err) {
+                , params
+                , function (err, obj) {
+                    if (!err) {
                         obj = obj.messages.map(function(msg) {
-                          msg.del = messageDel.bind(msg, msg.message_id)
-                          return msg
-                        })
-                      }
-                      cb(err, obj)
-                  })
+                        msg.del = messageDel.bind(msg, msg.message_id)
+                        return msg
+                      })
+                    }
+                    cb(err, obj)
+                })
       }
 
       function messageDel(message_id, cb) {
@@ -87,32 +122,76 @@ function IronMQ (token, op) {
 
       function queueInfo(cb) {
         var queuePath = '/projects/' + project_id
-                      + '/queues/'     + queue_name
+                      + '/queues/'   + queue_name
         // This will update the one you have.  Is this bad?
         ironmqGet(queuePath
-                  , {}
-                  , function (err, obj) {
-                    queue.id   = obj.id
-                    queue.name = obj.name
+                , {}
+                , function (err, obj) {
                     queue.size = obj.size
+                    queue.time = new Date()
                     cb(err, queue)
-                  })
+                })
 
+        return queue
       }
     }
 
-    queues.list = function (op, cb) {
+    /**
+     *  Returns a array of queues for a given project
+     */
+    queues.list = function listQueues(op, cb) {
+      if (typeof op === 'function') {
+        cb = op
+      }
 
+      ironmqGet('/projects/' + project_id + '/queues'
+              , {}
+              , function(err, obj) {
+                  if (!err) {
+                    obj = obj.map(function(queue) {
+                                    var tmp = queues(queue.name)
+                                    tmp.Timestamper = queue.Timestamper
+                                    return tmp
+                                  })
+                  }
+                  cb(err, obj)
+              })
     }
+    queues.id = function(){return project_id}
+
+    // little sugar
     queues.queues = queues
 
     return queues
   }
 
-  projects.list = function(cb) {
+  /*
+   *  Returns an array of projects for a given token
+   */
+  projects.list = function listProjects(cb) {
+    if (api_ver > 1) {
+      ironmqGet('/projects'
+              , {}
+              , function(err, obj) {
+                  cb(err, obj)
+              })
+    } else {
+      IronMQ(token
+          , { ver: 2
+            , host: 'worker-aws-us-east-1.iron.io'})
+        .list(function(err, obj) {
+          if (!err) {
+            obj = obj.projects.map(function(project) {
+              return IronMQ(token)(project.id)
+            })
+          }
 
+          cb(err, obj)
+        })
+    }
   }
 
+  // little sugar
   projects.projects = projects
 
   return projects
@@ -123,17 +202,17 @@ function IronMQ (token, op) {
   function ironmqGet(path, params, cb) {
 
     var search = qs.stringify(params)
-    search = search ? '?' + search : ''
+    search = search ? ('?' + search) : ''
 
     request.get({ url     : baseUrl + path + search
-            , headers : headers}
-          , parseResponse(cb))
+                , headers : headers}
+              , parseResponse(cb))
       .end()
   }
 
   function ironmqPut(path, body, cb) {
     request.post({ url    : baseUrl + path
-                , headers : headers}
+                 , headers : headers}
               , parseResponse(cb))
       .end(JSON.stringify(body))
   }
@@ -144,14 +223,15 @@ function IronMQ (token, op) {
               , parseResponse(cb))
       .end()
   }
-
-
 }
 
+/**
+ *  one function to handle all the return errors
+ */
 function parseResponse(cb) {
   return function parse(err, response, body) {
+    // TODO Handel the errors
     cb(err, JSON.parse(body))
   }
 }
 
-module.exports = IronMQ
