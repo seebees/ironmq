@@ -5,7 +5,7 @@ var test    = require('tap').test
 
 var con     = require('./constants.js')
 var token   = con.token
-var project = con.project
+var proj_id = con.project
 
 test('client', function(t) {
   t.ok(typeof ironmq === 'function')
@@ -29,16 +29,46 @@ test('client', function(t) {
 
 test('projects', function(t) {
   var projects  = ironmq(token)
-  var project   = projects(project)
+  var project   = projects(proj_id)
   t.ok(project)
   t.ok(typeof project.queues === 'function')
   t.ok(typeof project.queues.list === 'function')
   t.ok(project === project.queues)
   t.ok(project.list === project.queues.list)
+  t.equal(project.id(), proj_id)
 
   t.end()
 })
 
-//TODO tests projects.list
-//
-// no project throw error
+if (con.proxy) {
+  var req = nock('https://worker-aws-us-east-1.iron.io')
+    .matchHeader('authorization','OAuth ' + token)
+    .matchHeader('content-type','application/json')
+    .matchHeader('user-agent','IronMQ Node Client')
+    .get(
+      '/2/projects')
+    .reply(200
+        ,{ projects: [{ id: '4e25e1d35c0dd2780100048d'
+                      , timestamps: [Object]
+                      , user_id: '4e25e1cf5c0dd2780100022a'
+                      , name: 'test'
+                      , type: 'free'
+                      , task_count: 0 }]})
+}
+
+
+test('projects.list', function(t) {
+  ironmq(token).list(function(err, obj) {
+
+    t.equal(obj.length, 1)
+    t.equal(obj[0].id(), proj_id)
+    t.ok(typeof obj[0].list    === 'function')
+    t.ok(typeof obj[0].queues  === 'function')
+
+    t.end()
+  })
+
+})
+
+//TODO
+// no project throw error?
