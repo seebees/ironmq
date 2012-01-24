@@ -37,7 +37,7 @@ The Basics
               msg.id      // id of message
               msg.body    // message data
               msg.timeout // time until msg returns to queue
-              msg.del     // function to delete this message              
+              msg.del     // function to delete this message
           })
 
 When you pop/get a message from the queue, it will NOT be deleted. It will eventually go back onto the queue after
@@ -64,12 +64,12 @@ Project Selection
     ironmq('token').list(function(err, obj) {
       obj  // array of project objects
     })
-    
+
     var client  = ironmq('token')
     var project = client('project_id')
-    
+
     var project = ironmq('token').projects('project_id')
-    
+
     var project = ironmq('token')('project_id')
 
 Queue Selection
@@ -92,7 +92,7 @@ Queue Information
       obj.del     // delete messages from this queue
       obj.info    // update the size property for this queue
     })
-    
+
     project.queues('my_queue', function(err, queue) {})
-    
+
     project('my_queue', function(err, queue) {})
