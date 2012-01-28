@@ -81,7 +81,19 @@ function IronMQ (token, op) {
 
         var msgs
         if (Array.isArray(payload)) {
-          msgs = payload
+          var params = Object.keys(op)
+            , l = params.length
+
+          msgs = payload.map(function (msg) {
+                              var ret = {}
+                              // No Object.create love, JSON.strigify
+                              // does not care for prototype properties
+                              for (var i = 0; i<l; i++) {
+                                ret[params[i]] = op[params[i]]
+                              }
+                              ret.body = msg
+                              return ret
+                            })
         } else {
           op.body = payload
           msgs = [op]
