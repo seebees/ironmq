@@ -20,12 +20,6 @@ test('client', function(t) {
 
   t.end()
 })
-//TODO how do I test options?  list?
-//
-// 'token'
-// no token gives error
-// 'token' {protocol:, host:, port:, ver:}
-
 
 test('projects', function(t) {
   var projects  = ironmq(token)
@@ -49,7 +43,8 @@ if (con.proxy) {
       '/2/projects')
     .reply(200
         ,{ projects: [{ id: '4e25e1d35c0dd2780100048d'
-                      , timestamps: [Object]
+                      , timestamps: { "created_at":1308800463000000000
+                                    , "updated_at":1311105491000000000}
                       , user_id: '4e25e1cf5c0dd2780100022a'
                       , name: 'test'
                       , type: 'free'
@@ -59,7 +54,6 @@ if (con.proxy) {
 
 test('projects.list', function(t) {
   ironmq(token).list(function(err, obj) {
-
     t.equal(obj.length, 1)
     t.equal(obj[0].id(), proj_id)
     t.ok(typeof obj[0].list    === 'function')

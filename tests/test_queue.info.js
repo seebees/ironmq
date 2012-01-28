@@ -19,17 +19,21 @@ if (con.proxy) {
 }
 
 test('queue.info', function(t) {
-  ironmq(token)(project)(q_name).info(function(err, obj) {
+  var queue = ironmq(token)(project)(q_name).info(function(err, obj) {
 
-    t.ok(obj.name(), q_name)
-    t.ok(obj.size, 36)
-    t.ok(obj.time, new Date())
+    t.equal(obj.name(), q_name)
+    t.equal(obj.size, 36)
     t.ok(typeof obj.get  === 'function')
     t.ok(typeof obj.put  === 'function')
     t.ok(typeof obj.del  === 'function')
     t.ok(typeof obj.info === 'function')
 
+    // I update the same variable.  So everyone get's the new size!
+    t.equal(queue.size, 36)
     t.end()
   })
+
+  // the queue returned should not yet have a size
+  t.type(queue.size, 'undefined')
 })
 

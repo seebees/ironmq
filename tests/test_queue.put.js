@@ -40,6 +40,5 @@ test('queue.put(str, {}, func)', function(t) {
 
 
 //TODO
-// [msgs], cb
 // msg, not object, cb -> throw error
 
