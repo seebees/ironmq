@@ -1,6 +1,6 @@
 {
-  "name": "ironmq",
-  "description": "ironMQ bindings for node",
+  "name": "iron",
+  "description": "iron.io bindings for node",
   "version": "0.1.4",
   "author": "ryan emery <seebees@gmail.com>",
   "main": "./libs/index.js",
