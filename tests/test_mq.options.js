@@ -16,10 +16,10 @@ if (con.proxy) {
     .get(
       '/3/projects/' + proj_id + '/queues')
     .reply(200
-        ,[{ Timestamper   : {updated_at: 1327083607064000000 }
+        , [{ Timestamper   : {updated_at: 1327083607064000000 }
           , project_id    : 'test_worked'
           , name          : 'test_worked'}]
-        ,{'content-type':'application/json'})
+        , {'content-type':'application/json'})
 }
 
 test('options', function(t) {

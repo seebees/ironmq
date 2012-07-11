@@ -1,4 +1,4 @@
-var ironmq  = require('../')
+var iron  = require('../')
 
 var nock    = require('nock')
 var test    = require('tap').test
@@ -12,7 +12,7 @@ if (con.proxy) {
   var req = nock('https://mq-aws-us-east-1.iron.io')
     .matchHeader('authorization','OAuth ' + token)
     .matchHeader('content-type','application/json')
-    .matchHeader('user-agent','IronMQ Node Client')
+    .matchHeader('user-agent','Iron Node Client')
     .post(
       '/1/projects/' + project + '/queues/' + q_name + '/messages'
       , {"messages" : [ { some: 'option', body: 'this is a test' }
@@ -22,13 +22,15 @@ if (con.proxy) {
       , { ids: ['4f231f0fef05207255008f4a'
               , '4f231f0fef05207255008f4b'
               , '4f231f0fef05207255008f4c']
-        , msg: 'Messages put on queue.' })
+        , msg: 'Messages put on queue.' }
+      , {'content-type':'application/json'})
+
 }
 
 
 test('queue.put([], func)', function(t) {
 
-  var client = ironmq(token)
+  var client = iron(token)
   var queue  = client
                 .projects(project)
                 .queues(q_name)

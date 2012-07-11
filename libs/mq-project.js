@@ -7,32 +7,32 @@ module.exports = function IronMQProjects(headers, op) {
                     , pathname  : '/' + op.ver})
 
   // little sugar
-  MQProject.list    = listProjects
-  MQProject.project = MQProject
+  MQProjects.list    = listProjects
+  MQProjects.projects = MQProjects
 
-  return MQProject
+  return MQProjects
 
-  function MQProject(project_id) {
+  function MQProjects(project_id) {
 
     // little sugar
     queues.id     = function(){return project_id}
     queues.queues = queues
     queues.list = listQueues
-  
+
     return queues
-  
+
     /**
      *  Curry the queue_name
      *  cb is a function.  Passing it is short hand for
      *  queues(q_name).info(cb)
      */
     function queues(queue_name, cb) {
-  
+
       // path to use for http message operations
       var path = '/projects/' + project_id
                + '/queues/'   + queue_name
                + '/messages'
-  
+
       // object to return
       var queue = {
             put   : messagePut
@@ -40,27 +40,27 @@ module.exports = function IronMQProjects(headers, op) {
           , del   : messageDel
           , info  : queueInfo
           , name  : function(){return queue_name}}
-  
+
       if (typeof cb === 'function') {
         queue.info(cb)
       }
-  
+
       return queue
-  
+
       //Implementation
-  
+
       function messagePut(payload, op, cb) {
-  
+
         if (typeof op === 'function') {
           cb = op
           op = {}
         }
-  
+
         var msgs
         if (Array.isArray(payload)) {
           var params = Object.keys(op)
             , l = params.length
-  
+
           msgs = payload.map(function (msg) {
                               var ret = {}
                               // No Object.create love, JSON.strigify
@@ -75,10 +75,10 @@ module.exports = function IronMQProjects(headers, op) {
           op.body = payload
           msgs = [op]
         }
-  
+
         transport.put(path, {messages:msgs}, cb)
       }
-  
+
       function messageGet(message_id, cb) {
         //paramater checking, return message w/ .del()
         var params = {}
@@ -97,18 +97,18 @@ module.exports = function IronMQProjects(headers, op) {
                 , function (err, obj) {
                     if (!err) {
                         obj = obj.messages.map(function(msg) {
-                        msg.del = messageDel.bind(msg, msg.message_id)
-                        return msg
-                      })
+                          msg.del = messageDel.bind(msg, msg.message_id)
+                          return msg
+                        })
                     }
                     cb(err, obj)
                 })
       }
-  
+
       function messageDel(message_id, cb) {
         transport.del(path + '/' + message_id, cb)
       }
-  
+
       function queueInfo(cb) {
         var queuePath = '/projects/' + project_id
                       + '/queues/'   + queue_name
@@ -120,11 +120,11 @@ module.exports = function IronMQProjects(headers, op) {
                     queue.time = new Date()
                     cb(err, queue)
                 })
-  
+
         return queue
       }
     }
-  
+
     /**
      *  Returns a array of queues for a given project
      */

@@ -1,10 +1,9 @@
-module.exports = function IronCacheProjects (token, op) {
+module.exports = function IronCacheProjects (headers, op) {
 
   var transport = require('./transport')(
                   headers
                   , { protocol  : op.protocol || 'https'
                     , hostname  : op.host     || 'cache-aws-us-east-1.iron.io'
-                    , port      : op.port     || 443
                     , pathname  : '/' + op.ver})
 
   CacheProject.project = CacheProject

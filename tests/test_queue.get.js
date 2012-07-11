@@ -1,4 +1,4 @@
-var ironmq  = require('../')
+var iron  = require('../')
 
 var nock    = require('nock')
 var test    = require('tap').test
@@ -12,7 +12,7 @@ if (con.proxy) {
   var req = nock('https://mq-aws-us-east-1.iron.io')
     .matchHeader('authorization','OAuth ' + token)
     .matchHeader('content-type','application/json')
-    .matchHeader('user-agent','IronMQ Node Client')
+    .matchHeader('user-agent','Iron Node Client')
     .get(
       '/1/projects/' + project + '/queues/' + q_name
         + '/messages/4f1752cd52549a7435005a6b')
@@ -22,12 +22,13 @@ if (con.proxy) {
         , messages: [{ id: '4f1752cd52549a7435005a6b'
                      , timeout: 60
                      , body: 'this is a test'}]
-        , timeout: 60 })
+        , timeout: 60 }
+      , {'content-type':'application/json'})
 }
 
 test('queue.get', function(t) {
 
-  var queue = ironmq(token)
+  var queue = iron(token)
                 .projects(project)
                 .queues(q_name)
 

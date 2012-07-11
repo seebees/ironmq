@@ -6,7 +6,6 @@ var qs      = require('querystring')
 //Transport implementation
 
 module.exports = function transport(headers, op) {
-  
   var baseUrl = url.format(op)
 
   return { get: ironGet
@@ -22,14 +21,14 @@ module.exports = function transport(headers, op) {
               , parseResponse(cb))
       .end()
   }
-  
+
   function ironPut(path, body, cb) {
     request.post({ url    : baseUrl + path
                  , headers : headers}
               , parseResponse(cb))
       .end(JSON.stringify(body))
   }
-  
+
   function ironDel(path, cb) {
     request.del({ url     : baseUrl + path
                 , headers : headers}
@@ -43,15 +42,20 @@ module.exports = function transport(headers, op) {
  */
 function parseResponse(cb) {
   return function parse(err, response, body) {
-    var result
-    if (!err && response.headers['content-type'] == 'application/json') {
-      result = JSON.parse(body)
-    } else {
-      result = body
-    }
+    if (err) {
+      cb(err, body)
+    } else if (response.statusCode == '200') {
+      var result
+      if (response.headers['content-type'] == 'application/json') {
+        result = JSON.parse(body)
+      } else {
+        result = body
+      }
 
-    // TODO Handel the errors
-    cb(err, result)
+      cb(null, result)
+    } else {
+      cb(response.statusCode, body)
+    }
   }
 }
 

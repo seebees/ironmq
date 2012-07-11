@@ -1,5 +1,3 @@
-var rootUrl = 'worker-aws-us-east-1.iron.io';
-
 module.exports = function IronWorkerProjects(headers, op) {
   var transport = require('./transport')(
                   headers
@@ -8,17 +6,17 @@ module.exports = function IronWorkerProjects(headers, op) {
                     , port      : op.port     || 443
                     , pathname  : '/' + op.ver})
 
-  WorkerProject.list    = listProjects
-  WorkerProject.project = WorkerProject
+  WorkerProjects.list    = listProjects
+  WorkerProjects.project = WorkerProjects
 
   // worker is ONLY api_ver 2?
-  return MQProject
+  return WorkerProjects
 
   // Implementation
 
-  function WorkerProject(project_id) {
+  function WorkerProjects(project_id) {
     var path  = '/projects/' + project_id
-    
+
     var tasksPath = path + '/tasks';
     var scheduledTasksPath = path + '/schedules';
     var codePackagesPath = path + '/codes';

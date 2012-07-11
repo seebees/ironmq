@@ -1,4 +1,4 @@
-var ironmq  = require('../')
+var iron  = require('../')
 
 var nock    = require('nock')
 var test    = require('tap').test
@@ -12,17 +12,18 @@ if (con.proxy) {
   var req = nock('https://mq-aws-us-east-1.iron.io')
     .matchHeader('authorization','OAuth ' + token)
     .matchHeader('content-type','application/json')
-    .matchHeader('user-agent','IronMQ Node Client')
+    .matchHeader('user-agent','Iron Node Client')
     .delete(
       '/1/projects/' + project + '/queues/' + queue
         + '/messages/4f1752cd52549a7435005a6b')
     .reply(200
-      , { msg: 'Deleted'})
+        , { msg: 'Deleted'}
+        , {'content-type':'application/json'})
 }
 
 test('queue.del', function(t) {
 
-  var client = ironmq(token)
+  var client = iron(token)
   var queue  = client
                 .projects(project)
                 .queues('my_queue')
