@@ -1,4 +1,4 @@
-var ironmq  = require('../')
+var iron  = require('../')
 
 var nock    = require('nock')
 var test    = require('tap').test
@@ -8,10 +8,9 @@ var token   = con.token
 var proj_id = con.project
 
 test('client', function(t) {
-  t.ok(typeof ironmq === 'function')
+  t.ok(typeof iron === 'function')
 
-  //TODO error when !token or typeof token !== 'string'
-  var client = ironmq()
+  var client = iron(token).mq
   t.ok(typeof client.projects === 'function')
   t.ok(typeof client.projects === 'function')
   t.ok(typeof client.projects.list === 'function')
@@ -22,7 +21,7 @@ test('client', function(t) {
 })
 
 test('projects', function(t) {
-  var projects  = ironmq(token)
+  var projects  = iron(token).mq
   var project   = projects(proj_id)
   t.ok(project)
   t.ok(typeof project.queues === 'function')
@@ -35,10 +34,10 @@ test('projects', function(t) {
 })
 
 if (con.proxy) {
-  var req = nock('https://worker-aws-us-east-1.iron.io')
+  var req = nock(con.mq_url)
     .matchHeader('authorization','OAuth ' + token)
     .matchHeader('content-type','application/json')
-    .matchHeader('user-agent','IronMQ Node Client')
+    .matchHeader('user-agent',con.user_agent)
     .get(
       '/2/projects')
     .reply(200
@@ -48,20 +47,22 @@ if (con.proxy) {
                       , user_id: '4e25e1cf5c0dd2780100022a'
                       , name: 'test'
                       , type: 'free'
-                      , task_count: 0 }]})
+                      , task_count: 0 }]}
+        ,{'content-type':'application/json'})
 }
 
 
 test('projects.list', function(t) {
-  ironmq(token).list(function(err, obj) {
-    t.equal(obj.length, 1)
-    t.equal(obj[0].id(), proj_id)
-    t.ok(typeof obj[0].list    === 'function')
-    t.ok(typeof obj[0].queues  === 'function')
+  iron(token)
+    .mq
+    .list(function(err, obj) {
+      t.equal(obj.length, 1)
+      t.equal(obj[0].id(), proj_id)
+      t.ok(typeof obj[0].list    === 'function')
+      t.ok(typeof obj[0].queues  === 'function')
 
-    t.end()
-  })
-
+      t.end()
+    })
 })
 
 //TODO

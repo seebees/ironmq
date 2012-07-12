@@ -1,28 +1,29 @@
 module.exports = function IronCacheProjects (headers, op) {
-
+  op = op || {}
+  op.api_version = op.api_version || '1'
   var transport = require('./transport')(
                   headers
                   , { protocol  : op.protocol || 'https'
                     , hostname  : op.host     || 'cache-aws-us-east-1.iron.io'
-                    , pathname  : '/' + op.ver})
+                    , pathname  : '/' + op.api_version})
 
-  CacheProject.project = CacheProject
+  CacheProjects.projects  = CacheProjects
 
-  return CacheProject
+  return CacheProjects
 
   // Implementation
 
-  function CacheProject(project_id) {
+  function CacheProjects(project_id) {
 
-    cache.id    = function () {return project_id}
-    cache.cache = cache
-    cache.list  = listCaches
+    caches.id    = function () {return project_id}
+    caches.caches = caches
+    caches.list  = listCaches
 
-    return cache
+    return caches
 
     // Implementation
 
-    function cache(cache_name) {
+    function caches(cache_name) {
       var path = '/projects/' + project_id
                + '/caches/'   + cache_name;
 
@@ -58,11 +59,11 @@ module.exports = function IronCacheProjects (headers, op) {
 
       function cacheInc(key,amount,cb) {
         // TODO type checking on amount
-        var params = {
-          amount: amount
-        }
+        var params = {amount: amount}
 
-        transport.put(path + '/items/' + key + '/increment', params, cb);
+        transport.put(path + '/items/' + key + '/increment'
+                    , params
+                    , cb);
       }
 
       // TODO cacheDec
@@ -76,22 +77,22 @@ module.exports = function IronCacheProjects (headers, op) {
       }
     }
 
-    function listCaches(pageIndex, cb) {
-      if (typeof pageIndex === 'function') {
-        cb = pageIndex
-        pageIndex = null
+    /*
+     * op.page etc
+     * 
+     */
+    function listCaches(op, cb) {
+      if (typeof op === 'function') {
+        cb = op
+        op = {}
       }
 
-      if (pageIndex !== null) {
-        params.page = pageIndex
-      }
-
-      transport.get('/projects/' + project_id + '/caches/'
-                  , params
+      transport.get('/projects/' + project_id + '/caches'
+                  , op
                   , function (err, obj) {
                       if (!err) {
                         obj = obj.map(function(cache) {
-                          return cache(cache.name)
+                          return caches(cache.name)
                         })
                       }
 

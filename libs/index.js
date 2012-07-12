@@ -16,8 +16,11 @@
  */
 module.exports = function Iron (token, op) {
 
+  if (typeof token !== 'string') {
+    throw new Error('A secret token is required')
+  }
+
   op = op || {}
-  op.ver =  op.ver || '1'
 
   var headers = {
         'Authorization' : 'OAuth ' + token
@@ -26,9 +29,9 @@ module.exports = function Iron (token, op) {
 
   // little sugar
   projects.projects = projects
-  projects.mq       = require('./mq-project.js')(headers, op)
-  projects.cache    = require('./cache-project.js')(headers, op)
-  projects.worker   = require('./worker-project.js')(headers, op)
+  projects.mq       = require('./mq-project.js')(headers, op.mq)
+  projects.cache    = require('./cache-project.js')(headers, op.cache)
+  projects.worker   = require('./worker-project.js')(headers, op.worker)
 
   return projects
 

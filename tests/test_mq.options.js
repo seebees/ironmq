@@ -22,11 +22,11 @@ if (con.proxy) {
         , {'content-type':'application/json'})
 }
 
-test('options', function(t) {
+test('mq.options', function(t) {
   iron(token
-      ,{host      : 'host.name'
-      , protocol  : 'http'
-      , ver       : 3})
+      ,{mq: { host        : 'host.name'
+            , protocol    : 'http'
+            , api_version : 3}})
     .mq(proj_id)
     .list(function(err, obj) {
 

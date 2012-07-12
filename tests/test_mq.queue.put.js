@@ -13,13 +13,12 @@ if (con.proxy) {
     .matchHeader('authorization','OAuth ' + token)
     .matchHeader('content-type','application/json')
     .matchHeader('user-agent','Iron Node Client')
-    .post(
-      '/1/projects/' + project + '/queues/' + q_name + '/messages'
-      , {"messages" : [{body:"this is a test"}]})
+    .post('/1/projects/' + project + '/queues/' + q_name + '/messages'
+        , {"messages" : [{body:"this is a test"}]})
     .reply(200
-      , { ids: ['4f176348ef05202f74005bc6']
-        , msg: 'Messages put on queue.' }
-      , {'content-type':'application/json'})
+        , { ids: ['4f176348ef05202f74005bc6']
+          , msg: 'Messages put on queue.' }
+        , {'content-type':'application/json'})
 }
 
 

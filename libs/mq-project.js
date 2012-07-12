@@ -1,10 +1,12 @@
 
 module.exports = function IronMQProjects(headers, op) {
+  op = op || {}
+  var api_ver = op.api_version = op.api_version || '1'
   var transport = require('./transport')(
                   headers
                   , { protocol  : op.protocol || 'https'
                     , hostname  : op.host     || 'mq-aws-us-east-1.iron.io'
-                    , pathname  : '/' + op.ver})
+                    , pathname  : '/' + op.api_version})
 
   // little sugar
   MQProjects.list    = listProjects
@@ -76,7 +78,7 @@ module.exports = function IronMQProjects(headers, op) {
           msgs = [op]
         }
 
-        transport.put(path, {messages:msgs}, cb)
+        transport.post(path, {messages:msgs}, cb)
       }
 
       function messageGet(message_id, cb) {
@@ -160,11 +162,11 @@ module.exports = function IronMQProjects(headers, op) {
               })
     } else {
       IronMQProjects(headers
-          , { ver: 2})
+          , {api_version: 2})
         .list(function(err, obj) {
           if (!err) {
             obj = obj.projects.map(function(project) {
-              return MQProject(project.id)
+              return MQProjects(project.id)
             })
           }
 

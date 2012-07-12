@@ -1,22 +1,22 @@
-var ironWorker  = require('../').IronWorker;
+var iron  = require('../')
 
-var nock    = require('nock');
-var test    = require('tap').test;
+var nock    = require('nock')
+var test    = require('tap').test
 var con     = require('./constants.js');
 
 var token    	= con.token;
-var projectId 	= con.projectId;
-var taskId  	= con.taskId;
+var projectId 	= con.project;
+var taskId  	= con.task
 
 if (con.proxy)
 {
-	var req = nock('https://' + con.ironWorkerRootUrl)
+	var req = nock(con.worker_url)
 		.matchHeader('authorization','OAuth ' + token)
 		.matchHeader('content-type','application/json')
-		.matchHeader('user-agent',con.ironWorkerUserAgent)
+		.matchHeader('user-agent',con.user_agent)
 		.post(
-		'/2/projects/' + projectId + '/schedules'
-		, { schedules : [
+		'/2/projects/' + projectId + '/tasks'
+		, { tasks : [
 				{
 					"code_name": "testCode",
 					"payload": "testPayload"
@@ -25,8 +25,8 @@ if (con.proxy)
 		})
 		.reply(200
 		, {
-			msg : "Scheduled",
-			schedules: [
+			msg : "Queued up",
+			tasks: [
 				{
 					"id": taskId
 				}
@@ -36,17 +36,15 @@ if (con.proxy)
 	   });
 }
 
-test('scheduledTasks.post(str,str,{},func)', function(t)
-{
+test('tasks.post(str,str,int,int,int, func)', function(t) {
 	var client = ironWorker(token);
 	var project  = client.projects(projectId);
 
-	project.scheduleTask('testCode',"testPayload", function(err, obj)
-	{
+	project.queueTask('testCode',"testPayload", function(err, obj){
 		t.deepEqual(obj,
 					{
-						msg: "Scheduled",
-						schedules: [
+						msg: "Queued up",
+						tasks: [
 							{
 								"id": taskId
 							}

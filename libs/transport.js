@@ -8,23 +8,41 @@ var qs      = require('querystring')
 module.exports = function transport(headers, op) {
   var baseUrl = url.format(op)
 
-  return { get: ironGet
-         , put: ironPut
-         , del: ironDel }
+  return { get  : ironGet
+         , post : ironPost
+         , put  : ironPut
+         , del  : ironDel }
 
   function ironGet(path, params, cb) {
-    var search = qs.stringify(params)
-    search = search ? ('?' + search) : ''
+    if (typeof params === 'function') {
+      cb = params
+      params = null
+    }
 
-    request.get({ url     : baseUrl + path + search
+    request.get({ url     : baseUrl
+                            + url.format({pathname: path, query: params})
                 , headers : headers}
               , parseResponse(cb))
       .end()
   }
 
-  function ironPut(path, body, cb) {
+  function ironPost(path, body, cb) {
+    if (typeof body === 'function') {
+      cb = body
+      body = null
+    }
+
+    var send = body ? JSON.stringify(body) : ''
+
     request.post({ url    : baseUrl + path
                  , headers : headers}
+              , parseResponse(cb))
+      .end(send)
+  }
+
+  function ironPut(path, body, cb) {
+    request.put({ url     : baseUrl + path
+                , headers : headers}
               , parseResponse(cb))
       .end(JSON.stringify(body))
   }

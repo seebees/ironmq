@@ -1,15 +1,17 @@
 module.exports = function IronWorkerProjects(headers, op) {
+  op = op || {}
+  // worker is ONLY api_ver 2?
+  op.api_version = op.api_version || '2'
   var transport = require('./transport')(
                   headers
                   , { protocol  : op.protocol || 'https'
                     , hostname  : op.host     || 'worker-aws-us-east-1.iron.io'
-                    , port      : op.port     || 443
-                    , pathname  : '/' + op.ver})
+                    //, port      : op.port     || 443
+                    , pathname  : '/' + op.api_version})
 
-  WorkerProjects.list    = listProjects
-  WorkerProjects.project = WorkerProjects
+  WorkerProjects.list     = listProjects
+  WorkerProjects.projects = WorkerProjects
 
-  // worker is ONLY api_ver 2?
   return WorkerProjects
 
   // Implementation
@@ -17,27 +19,15 @@ module.exports = function IronWorkerProjects(headers, op) {
   function WorkerProjects(project_id) {
     var path  = '/projects/' + project_id
 
-    var tasksPath = path + '/tasks';
-    var scheduledTasksPath = path + '/schedules';
-    var codePackagesPath = path + '/codes';
+    tasks.list = listTasks
+    codePackages.list = listCodePackages
+    scheduledTasks.list = listSchedules
 
     var project = {
-      id: function () { return project_id; },
-
-      // tasks
-      listTasks: listTasks,
-      queueTask: queueTask,
-      hookTask: hookTask,
-      tasks: tasks,
-
-      // scheduled tasks
-      listScheduledTasks: listScheduledTasks,
-      scheduleTask: scheduleTask,
-      scheduledTasks: scheduledTasks,
-
-      // code packages
-      listCodePackages: listCodePackages,
-      codePackages: codePackages
+        id: function () { return project_id }
+      , tasks: tasks
+      , schedules: scheduledTasks
+      , code: codePackages
     }
 
     return project
@@ -63,17 +53,9 @@ module.exports = function IronWorkerProjects(headers, op) {
 
       //Implementation
 
-      function taskInfo(cb) {
-        ironWorkerGet(path, null, cb)
-      }
-
-      function taskLog(cb) {
-        ironWorkerGet(path + '/log', null, cb)
-      }
-
-      function taskCancel(cb) {
-        ironWorkerPostSimple(path + '/cancel', null, cb);
-      }
+      function taskInfo(cb) { transport.get(path, cb) }
+      function taskLog(cb) { transport.get(path + '/log', cb) }
+      function taskCancel(cb) { transport.post(path + '/cancel', null, cb) }
 
       function taskProgress(percent, msg, cb) {
         var progress = {
@@ -81,8 +63,33 @@ module.exports = function IronWorkerProjects(headers, op) {
           msg: msg
         }
 
-        ironWorkerPost(path + '/progress', progress, cb)
+        transport.post(path + '/progress', progress, cb)
       }
+    }
+
+     /*
+     *  op.page
+     *  op.per_page
+     *  op.from_time
+     *  op.to_time
+     */
+    function listTasks(op, cb) {
+      if (typeof op === 'function') {
+        cb = op
+        op = {}
+      }
+
+      op = op || {}
+
+      transport.get(url, params, function (err, obj) {
+        if (!err) {
+          obj = obj.tasks.map(function(task) {
+            return tasks(task.id)
+          })
+        }
+
+        cb(err, obj)
+      })
     }
 
     function scheduledTasks(schedule_id, cb) {
@@ -102,13 +109,33 @@ module.exports = function IronWorkerProjects(headers, op) {
       return schedule
 
       //Implementation
-      function scheduleInfo(cb) {
-        ironWorkerGet(path, null, cb)
+      function scheduleInfo(cb) { transport.get(path, cb) }
+
+      function scheduleCancel(cb) { transport.post(path + '/cancel', cb) }
+    }
+
+    /*
+     *  op.page
+     *  op.per_page
+     */
+    function listSchedules(op, cb) {
+      if (typeof op === 'function') {
+        cb = op
+        op = {}
       }
 
-      function scheduleCancel(cb) {
-        ironWorkerPostSimple(path + '/cancel', null, cb)
-      }
+      op = op || {}
+
+      transport.get(path + '/schedules', op, function (err, obj) {
+        if (!err)
+        {
+          obj = obj.schedules.map(function(schedule) {
+            return scheduledTasks(schedule.id)
+          })
+        }
+
+        cb(err, obj)
+      })
     }
 
     function codePackages(code_id, cb) {
@@ -123,6 +150,7 @@ module.exports = function IronWorkerProjects(headers, op) {
         , revisions : codePackageRevisions
         , queue     : queueCodePackage
         , schedule  : scheduleCodePackage
+        //, hook      : hookCodePackage // TODO
       }
 
       if (typeof cb === 'function') {
@@ -132,17 +160,9 @@ module.exports = function IronWorkerProjects(headers, op) {
       return codePackage
 
       //Implementation
-      function codePackageInfo(cb) {
-        ironWorkerGet(path, null, cb)
-      }
-
-      function codePackageDelete(cb) {
-        ironWorkerDel(path, cb)
-      }
-
-      function codePackageDownload(cb) {
-        ironWorkerGet(path + '/download', null, cb);
-      }
+      function codePackageInfo(cb) {transport.get(path, cb)}
+      function codePackageDelete(cb) {transport.del(path, cb)}
+      function codePackageDownload(cb) {transport.get(path + '/download', cb)}
 
       function queueCodePackage(payload, op, cb) {
         if (typeof op === 'function') {
@@ -155,7 +175,7 @@ module.exports = function IronWorkerProjects(headers, op) {
         op.code_name  = code_name
         op.payload    = op.payload
 
-        ironWorkerPost(path + '/tasks', {tasks:[op]}, cb);
+        transport.post(path + '/tasks', {tasks:[op]}, cb);
       }
 
       function scheduleCodePackage(payload, op, cb) {
@@ -169,9 +189,13 @@ module.exports = function IronWorkerProjects(headers, op) {
         op.code_name = ''
         op.payload   = payload
 
-        ironWorkerPost('/projects/' + project_id + '/schedules'
+        transport.post(path + '/schedules'
                     , {schedules: [op]}
                     , cb)
+      }
+
+      function hookCodePackage(payload, op, cb) {
+
       }
 
       /*
@@ -186,7 +210,7 @@ module.exports = function IronWorkerProjects(headers, op) {
 
         op = op || {}
 
-        ironWorkerGet(path + '/revisions', params, function (err, obj) {
+        transport.get(path + '/revisions', op, function (err, obj) {
           if (!err) {
             obj = obj.revisions
           }
@@ -194,109 +218,6 @@ module.exports = function IronWorkerProjects(headers, op) {
           cb(err, obj)
         })
       }
-    }
-
-    /*
-     *  op.page
-     *  op.per_page
-     *  op.from_time
-     *  op.to_time
-     */
-    function listTasks(op, cb) {
-      if (typeof op === 'function') {
-        cb = op
-        op = {}
-      }
-
-      op = op || {}
-
-      ironWorkerGet(url, params, function (err, obj) {
-        if (!err) {
-          obj = obj.tasks.map(function(task) {
-            return tasks(task.id)
-          })
-        }
-
-        cb(err, obj)
-      })
-    }
-
-    /*
-     *  op.priority
-     *  op.timeout
-     *  op.delay
-     */
-    function queueTask(code_name, payload, op, cb) {
-      if (typeof op === 'function') {
-        cb = op
-        op = {}
-      }
-
-      op = op || {}
-
-      op.code_name  = code_name
-      op.payload    = op.payload
-
-      ironWorkerPost(path + '/tasks', {tasks:[op]}, cb);
-    }
-
-    function hookTask(codeName, payload, cb) {
-      var url = tasksPath + "/webhook?code_name=" + codeName
-
-      ironWorkerPostSimple(url, payload, cb)
-    }
-
-    /*
-     *  op.page
-     *  op.per_page
-     */
-    function listScheduledTasks(op, cb) {
-      if (typeof op === 'function') {
-        cb = op
-        op = {}
-      }
-
-      op = op || {}
-
-      ironWorkerGet(path + '', op, function (err, obj) {
-        if (!err)
-        {
-          obj = obj.schedules.map(function(schedule) {
-            return scheduledTasks(schedule.id)
-          })
-        }
-
-        cb(err, obj);
-      });
-    }
-
-    function scheduleTask(codeName, payload, properties, cb) {
-      if (typeof properties === 'function') {
-        cb = properties
-        properties = null
-      }
-
-      var url = scheduledTasksPath;
-      var schedule = {
-        "code_name": codeName,
-        "payload": payload
-      }
-
-      // merge in extra provided params
-      if (properties !== null) {
-        var keys = Object.keys(properties)
-        var numKeys = keys.length
-
-        for (var i = 0; i<numKeys; i++) {
-          schedule[keys[i]] = properties[keys[i]]
-        }
-      }
-
-      var params = {
-        "schedules" : [schedule]
-      }
-
-      ironWorkerPost(url, params, cb)
     }
 
     function listCodePackages(op, cb) {
@@ -307,25 +228,26 @@ module.exports = function IronWorkerProjects(headers, op) {
 
       op = op || {}
 
-      ironWorkerGet(url, op, function (err, obj) {
-        if (!err) {
-          obj = obj.codes.map(function(codePackage) {
-            return codePackages(codePackage.id)
-          })
-        }
+      transport.get(path + '/codes'
+                  , op
+                  , function (err, obj) {
+                    if (!err) {
+                      obj = obj.codes.map(function(codePackage) {
+                        return codePackages(codePackage.id)
+                      })
+                    }
 
-        cb(err, obj)
-      })
+                    cb(err, obj)
+                  })
     }
   }
 
   function listProjects(cb) {
-    ironWorkerGet('/projects'
-      , {}
+    transport.get('/projects'
       , function (err, obj) {
         if (!err) {
           obj = obj.projects.map(function(project) {
-            return IronWorker(token).projects(project.id);
+            return WorkerProjects(project.id)
           })
         }
 
