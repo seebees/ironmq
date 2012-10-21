@@ -120,7 +120,7 @@ function IronMQ (token, op) {
                 , function (err, obj) {
                     if (!err) {
                         obj = obj.messages.map(function(msg) {
-                        msg.del = messageDel.bind(msg, msg.message_id)
+                        msg.del = messageDel.bind(msg, msg.id)
                         return msg
                       })
                     }
