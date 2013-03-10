@@ -1,7 +1,7 @@
-
 var url     = require('url')
 var request = require('request')
 var qs      = require('querystring')
+var util    = require('util')
 
 // Expose
 module.exports = IronMQ
@@ -242,6 +242,20 @@ function IronMQ (token, op) {
  */
 function parseResponse(cb) {
   return function parse(err, response, body) {
+
+
+    if (response.statusCode > 399) {
+      var errMsg = util.format("%s %s %s %s %d %s %j \n", "API request to Iron.io failed." 
+                              , "\nRequest URL:"
+                              , response.request.uri.href
+                              , "\nResponse Code: "
+                              , response.statusCode
+                              , "\nError Message: "
+                              , JSON.parse(response.body));
+                              
+      throw new Error(errMsg);
+    }
+    
     // TODO Handel the errors
     cb(err, JSON.parse(body))
   }
